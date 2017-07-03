@@ -20,7 +20,7 @@ const devDbHost = "DCFL_DEV_PG_HOST"
 const devDbPort = "DCFL_DEV_PG_PORT"
 const devDbUser = "DCFL_DEV_PG_USER"
 const devDbName = "DCFL_DEV_PG_NAME"
-const devDbURL = "DATABASE_URL"
+const dbURL = "DATABASE_URL"
 const devDbDriver = "postgres"
 const migrationsDirectory = "migrations/postgres"
 const tokeninfoEndpoint = "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token="
@@ -115,7 +115,7 @@ func initDB() {
 		)
 
 	} else if env == "PROD" {
-		dbInfo = os.Getenv(devDbURL)
+		dbInfo = os.Getenv(dbURL)
 	} else {
 		log.Fatal("$ENV must be set")
 	}

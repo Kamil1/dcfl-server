@@ -1,0 +1,10 @@
+development:
+    dialect: postgres
+    datasource: dbname=podcast sslmode=disable
+    dir: migrations/postgres
+
+production:
+    dialect: postgres
+    datasource: ${DATABASE_URL}
+    dir: migrations/postgres
+    

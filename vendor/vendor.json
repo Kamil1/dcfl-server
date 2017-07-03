@@ -1,0 +1,61 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "D1BVROe0MVJEDgm++mv1iVQ6+80=",
+			"path": "github.com/gorilla/mux",
+			"revision": "8c683ee571b6ee7ffc9f1cafd13103c422e71cbf",
+			"revisionTime": "2017-06-21T21:27:26Z"
+		},
+		{
+			"checksumSHA1": "hEnH6sgR83Qfx7UNnphNNlelmj0=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "ea4d1f681babbce9545c9c5f3d5194a789c89f5b",
+			"revisionTime": "2017-06-20T19:01:03Z"
+		},
+		{
+			"checksumSHA1": "qzl/TNo4WnfR+PZRfk3iFHg68sM=",
+			"path": "github.com/joho/godotenv",
+			"revision": "325433c502d409f3c3dc820098fb0cfe38d98dc7",
+			"revisionTime": "2017-03-28T20:01:54Z"
+		},
+		{
+			"checksumSHA1": "Wh2YCiWY/VIAEEQGLS7sMB9isXk=",
+			"path": "github.com/lib/pq",
+			"revision": "8837942c3e09574accbc5f150e2c5e057189cace",
+			"revisionTime": "2017-06-03T22:54:54Z"
+		},
+		{
+			"checksumSHA1": "Gk3jTNQ5uGDUE0WMJFWcYz9PMps=",
+			"path": "github.com/lib/pq/oid",
+			"revision": "8837942c3e09574accbc5f150e2c5e057189cace",
+			"revisionTime": "2017-06-03T22:54:54Z"
+		},
+		{
+			"checksumSHA1": "lZmPAbekxLbMFQirB/vzbdI+5O8=",
+			"path": "github.com/rs/cors",
+			"revision": "8dd4211afb5d08dbb39a533b9bb9e4b486351df6",
+			"revisionTime": "2017-06-08T16:51:55Z"
+		},
+		{
+			"checksumSHA1": "RUVxsqwguPxw4WBSS7bIXrKs4y4=",
+			"path": "github.com/rubenv/sql-migrate",
+			"revision": "72a5478faa469f9023cc1802367cddfc5270acbb",
+			"revisionTime": "2017-06-15T09:13:04Z"
+		},
+		{
+			"checksumSHA1": "bkwylqn8c7IaoM95SFrAIECmZX0=",
+			"path": "github.com/rubenv/sql-migrate/sqlparse",
+			"revision": "72a5478faa469f9023cc1802367cddfc5270acbb",
+			"revisionTime": "2017-06-15T09:13:04Z"
+		},
+		{
+			"checksumSHA1": "xunNOgG8P6Xh4SM+LPQ1zMDXa8Q=",
+			"path": "gopkg.in/gorp.v1",
+			"revision": "c87af80f3cc5036b55b83d77171e156791085e2e",
+			"revisionTime": "2015-02-04T08:55:30Z"
+		}
+	],
+	"rootPath": "github.com/Kamil1/dcfl"
+}

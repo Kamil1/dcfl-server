@@ -288,9 +288,9 @@ func registerGame(h *hub, cm *dcflMsg) {
 	h.sideMx.Unlock()
 }
 
+// This function assumes and requires the sideMx lock to be acquired by the caller.
 func unregisterGame(h *hub, cm *dcflMsg) {
 	fmt.Println("Unregistering")
-	h.sideMx.Lock()
 	if cm.Side == "black" {
 		if h.blackSide[0].Sub == cm.Sub {
 			h.blackSide[0] = player{}
@@ -304,11 +304,9 @@ func unregisterGame(h *hub, cm *dcflMsg) {
 			h.yellowSide[1] = player{}
 		}
 	} else {
-		h.sideMx.Unlock()
 		return
 	}
 
-	h.sideMx.Unlock()
 	fmt.Println("Completed unregistration")
 }
 
@@ -584,7 +582,9 @@ func newHub() *hub {
 			case "register game":
 				registerGame(h, cm)
 			case "unregister":
+				h.sideMx.Lock()
 				unregisterGame(h, cm)
+				h.sideMx.Unlock()
 			case "confirm":
 				confirmPlayer(h, cm)
 			case "register team":
@@ -628,10 +628,6 @@ func newHub() *hub {
 				stateJSON, _ := json.Marshal(state)
 				msg = stateJSON
 			}
-			fmt.Println("Unlocking")
-			h.sideMx.RUnlock()
-			fmt.Println("Unlocked")
-
 			h.connectionsMx.Lock()
 			for c := range h.connections {
 				select {
@@ -643,6 +639,7 @@ func newHub() *hub {
 				}
 			}
 			h.connectionsMx.Unlock()
+			h.sideMx.RUnlock()
 			fmt.Println("Confirmations sent successfully.")
 		}
 	}()
@@ -657,6 +654,8 @@ func (h *hub) addConnection(conn *connection) {
 	h.confirmations <- "match state"
 }
 
+// This function assumes and requires both the sideMx and connectionsMx locks to be
+// acquired by the caller.
 func (h *hub) removeConnection(conn *connection) {
 	fmt.Println("remove conn called")
 	fmt.Println("removing...")

@@ -281,14 +281,38 @@ func unregisterGame(h *hub, cm *dcflMsg) {
 	if cm.Side == "black" {
 		if h.blackSide[0].Sub == cm.Sub {
 			h.blackSide[0] = player{}
+			if h.gameStarted {
+				h.scoreMx.Lock()
+				defer h.scoreMx.Unlock()
+				reset(h, "Player left mid-game")
+				return
+			}
 		} else if h.blackSide[1].Sub == cm.Sub {
 			h.blackSide[1] = player{}
+			if h.gameStarted {
+				h.scoreMx.Lock()
+				defer h.scoreMx.Unlock()
+				reset(h, "Player left mid-game")
+				return
+			}
 		}
 	} else if cm.Side == "yellow" {
 		if h.yellowSide[0].Sub == cm.Sub {
 			h.yellowSide[0] = player{}
+			if h.gameStarted {
+				h.scoreMx.Lock()
+				defer h.scoreMx.Unlock()
+				reset(h, "Player left mid-game")
+				return
+			}
 		} else if h.yellowSide[1].Sub == cm.Sub {
 			h.yellowSide[1] = player{}
+			if h.gameStarted {
+				h.scoreMx.Lock()
+				defer h.scoreMx.Unlock()
+				reset(h, "Player left mid-game")
+				return
+			}
 		}
 	} else {
 		return

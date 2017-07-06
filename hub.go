@@ -144,7 +144,7 @@ func endGame(h *hub) {
 }
 
 // This function assumes and requires the caller to have the sideMx and scoreMx locks acquired.
-func reset(h *hub, resetReason string) {
+func (h *hub) reset() {
 	h.blackTeam = team{}
 	h.yellowTeam = team{}
 	h.blackSide[0] = player{}
@@ -156,11 +156,10 @@ func reset(h *hub, resetReason string) {
 	h.yellowScore = 0
 	h.gameStarted = false
 	h.gameOver = false
-	fmt.Println("done removing conns")
 }
 
 // Assumes and requires that caller has acquired sideMx lock.
-func registerGame(h *hub, cm *dcflMsg) {
+func registerGame(h *hub, cm *dcflMsg) (string, bool) {
 	fmt.Println("Registering")
 	if cm.Side == "black" {
 		// Check if already registered on black side.
@@ -178,13 +177,13 @@ func registerGame(h *hub, cm *dcflMsg) {
 				unregisterGame(h, cm)
 			}
 			fmt.Println("Already registered and confirmed to black side")
-			return
+			return "", false
 		}
 
 		// Check if black side is full.
 		if h.blackSide[0] != (player{}) && h.blackSide[1] != (player{}) {
 			fmt.Println("Black side full")
-			return
+			return "", false
 		}
 	} else if cm.Side == "yellow" {
 		// Check if already registered on yellow side.
@@ -202,24 +201,24 @@ func registerGame(h *hub, cm *dcflMsg) {
 				unregisterGame(h, cm)
 			}
 			fmt.Println("Already registered and confirmed to yellow side")
-			return
+			return "", false
 		}
 
 		// Check if yellow side is full.
 		if h.yellowSide[0] != (player{}) && h.yellowSide[1] != (player{}) {
 			fmt.Println("Yellow side full")
-			return
+			return "", false
 		}
 	} else {
 		// If side is neither black nor yellow, ignore the request.
-		return
+		return "", false
 	}
 
 	fmt.Println("Getting user picture")
 	var picture string
 	err := db.QueryRow("SELECT picture FROM public.player WHERE id = $1", cm.Sub).Scan(&picture)
 	if err != nil {
-		return
+		return "", false
 	}
 
 	if cm.Side == "black" {
@@ -235,7 +234,7 @@ func registerGame(h *hub, cm *dcflMsg) {
 			}
 		}
 		if err != nil {
-			return
+			return "", false
 		}
 
 		// Register to first free side slot.
@@ -260,7 +259,7 @@ func registerGame(h *hub, cm *dcflMsg) {
 			}
 		}
 		if err != nil {
-			return
+			return "", false
 		}
 
 		// Register to first free side slot.
@@ -273,10 +272,11 @@ func registerGame(h *hub, cm *dcflMsg) {
 			h.yellowSide[1] = player{Sub: cm.Sub, Picture: picture, Confirmed: false}
 		}
 	}
+	return "", false
 }
 
 // This function assumes and requires the sideMx lock to be acquired by the caller.
-func unregisterGame(h *hub, cm *dcflMsg) {
+func unregisterGame(h *hub, cm *dcflMsg) (string, bool) {
 	fmt.Println("Unregistering")
 	if cm.Side == "black" {
 		if h.blackSide[0].Sub == cm.Sub {
@@ -284,16 +284,16 @@ func unregisterGame(h *hub, cm *dcflMsg) {
 			if h.gameStarted {
 				h.scoreMx.Lock()
 				defer h.scoreMx.Unlock()
-				reset(h, "Player left mid-game")
-				return
+				h.reset()
+				return "Player left mid-game", true
 			}
 		} else if h.blackSide[1].Sub == cm.Sub {
 			h.blackSide[1] = player{}
 			if h.gameStarted {
 				h.scoreMx.Lock()
 				defer h.scoreMx.Unlock()
-				reset(h, "Player left mid-game")
-				return
+				h.reset()
+				return "Player left mid-game", true
 			}
 		}
 	} else if cm.Side == "yellow" {
@@ -302,27 +302,28 @@ func unregisterGame(h *hub, cm *dcflMsg) {
 			if h.gameStarted {
 				h.scoreMx.Lock()
 				defer h.scoreMx.Unlock()
-				reset(h, "Player left mid-game")
-				return
+				h.reset()
+				return "Player left mid-game", true
 			}
 		} else if h.yellowSide[1].Sub == cm.Sub {
 			h.yellowSide[1] = player{}
 			if h.gameStarted {
 				h.scoreMx.Lock()
 				defer h.scoreMx.Unlock()
-				reset(h, "Player left mid-game")
-				return
+				h.reset()
+				return "Player left mid-game", true
 			}
 		}
 	} else {
-		return
+		return "", false
 	}
 
 	fmt.Println("Completed unregistration")
+	return "", false
 }
 
 // This function assumes and requires the sideMx lock to be acquired by the caller.
-func confirmPlayer(h *hub, cm *dcflMsg) {
+func confirmPlayer(h *hub, cm *dcflMsg) (string, bool) {
 	fmt.Println("Confirming")
 	if cm.Side == "black" {
 		if h.blackSide[0].Sub == cm.Sub {
@@ -333,7 +334,7 @@ func confirmPlayer(h *hub, cm *dcflMsg) {
 			h.blackSide[1].Confirmed = true
 		} else {
 			fmt.Println("Black player not found")
-			return
+			return "", false
 		}
 
 		// Get team name.
@@ -341,7 +342,7 @@ func confirmPlayer(h *hub, cm *dcflMsg) {
 			team, err := getTeam(h.blackSide[0].Sub, h.blackSide[1].Sub)
 			if err != nil {
 				fmt.Println(err)
-				return
+				return "", false
 			}
 			h.blackTeam = team
 		}
@@ -355,7 +356,7 @@ func confirmPlayer(h *hub, cm *dcflMsg) {
 			h.yellowSide[1].Confirmed = true
 		} else {
 			fmt.Println("Yellow player not found")
-			return
+			return "", false
 		}
 
 		// Get team name.
@@ -363,7 +364,7 @@ func confirmPlayer(h *hub, cm *dcflMsg) {
 			team, err := getTeam(h.yellowSide[0].Sub, h.yellowSide[1].Sub)
 			if err != nil {
 				fmt.Println(err)
-				return
+				return "", false
 			}
 			h.yellowTeam = team
 		}
@@ -379,14 +380,16 @@ func confirmPlayer(h *hub, cm *dcflMsg) {
 		if err != nil {
 			h.scoreMx.Lock()
 			defer h.scoreMx.Unlock()
-			reset(h, "Error starting game")
-			return
+			h.reset()
+			return "Error starting game", true
 		}
 	}
+
+	return "", false
 }
 
 // This function assumes and requires the sideMx lock to be acquired by the caller.
-func registerTeam(h *hub, cm *dcflMsg) {
+func registerTeam(h *hub, cm *dcflMsg) (string, bool) {
 	fmt.Println("Registering team")
 	if cm.Player1 == "" ||
 		cm.Player2 == "" ||
@@ -395,8 +398,8 @@ func registerTeam(h *hub, cm *dcflMsg) {
 		cm.Name == "" {
 		h.scoreMx.Lock()
 		defer h.scoreMx.Unlock()
-		reset(h, "Error registering teams")
-		return
+		h.reset()
+		return "Error registering teams", true
 	}
 	var count int
 	err := db.QueryRow(
@@ -408,8 +411,8 @@ func registerTeam(h *hub, cm *dcflMsg) {
 	if err != nil || count != 0 {
 		h.scoreMx.Lock()
 		defer h.scoreMx.Unlock()
-		reset(h, "Error registering teams")
-		return
+		h.reset()
+		return "Error registering teams", true
 	}
 
 	var id int
@@ -422,8 +425,8 @@ func registerTeam(h *hub, cm *dcflMsg) {
 	if err != nil {
 		h.scoreMx.Lock()
 		defer h.scoreMx.Unlock()
-		reset(h, "Error creating team")
-		return
+		h.reset()
+		return "Error creating team", true
 	}
 
 	teamObj := team{ID: id, City: cm.City, Name: cm.Name}
@@ -435,8 +438,8 @@ func registerTeam(h *hub, cm *dcflMsg) {
 	} else {
 		h.scoreMx.Lock()
 		defer h.scoreMx.Unlock()
-		reset(h, "Error setting up team")
-		return
+		h.reset()
+		return "Error setting up team", true
 	}
 
 	if h.blackSide[0].Confirmed &&
@@ -449,65 +452,68 @@ func registerTeam(h *hub, cm *dcflMsg) {
 		if err != nil {
 			h.scoreMx.Lock()
 			defer h.scoreMx.Unlock()
-			reset(h, "Error starting game")
-			return
+			h.reset()
+			return "Error starting game", true
 		}
 	}
+
+	return "", false
 }
 
 // This function assumes and requires the scoreMx and sideMx locks to be acquired by the caller.
-func registerGoal(h *hub, cm *dcflMsg) {
+func registerGoal(h *hub, cm *dcflMsg) (string, bool) {
 	fmt.Println("Registering goal")
 	// Must be in game to score goal.
 	if !h.gameStarted || h.gameOver {
-		return
+		return "", false
 	}
 	if h.blackSide[0].Sub == cm.Sub {
 		h.blackSide[0].Goals++
 		h.blackScore++
 		if h.blackScore == 5 || h.yellowScore == 5 {
 			endGame(h)
-			reset(h, "Game Over")
-			return
+			h.reset()
+			return "Game Over", true
 		}
 	} else if h.blackSide[1].Sub == cm.Sub {
 		h.blackSide[1].Goals++
 		h.blackScore++
 		if h.blackScore == 5 || h.yellowScore == 5 {
 			endGame(h)
-			reset(h, "Game Over")
-			return
+			h.reset()
+			return "Game Over", true
 		}
 	} else if h.yellowSide[0].Sub == cm.Sub {
 		h.yellowSide[0].Goals++
 		h.yellowScore++
 		if h.blackScore == 5 || h.yellowScore == 5 {
 			endGame(h)
-			reset(h, "Game Over")
-			return
+			h.reset()
+			return "Game Over", true
 		}
 	} else if h.yellowSide[1].Sub == cm.Sub {
 		h.yellowSide[1].Goals++
 		h.yellowScore++
 		if h.blackScore == 5 || h.yellowScore == 5 {
 			endGame(h)
-			reset(h, "Game Over")
-			return
+			h.reset()
+			return "Game Over", true
 		}
 	} else {
 		// Player not in game.
-		return
+		return "", false
 	}
 	fmt.Println("Unlocking mutexes in goal")
 	fmt.Println("Done goal")
+	return "", false
 }
 
 // This function assumes and requires the caller to have the sideMx and scoreMx locks acquired.
-func unregisterGoal(h *hub, cm *dcflMsg) {
+func unregisterGoal(h *hub, cm *dcflMsg) (string, bool) {
 	fmt.Println("Undoing goal")
 	// Must be in game to undo goal.
 	if !h.gameStarted || h.gameOver {
-		return
+		return "", false
 	}
 	if h.blackSide[0].Sub == cm.Sub {
 		h.blackSide[0].Goals--
@@ -523,8 +529,9 @@ func unregisterGoal(h *hub, cm *dcflMsg) {
 		h.yellowScore--
 	} else {
 		// Player not in game.
-		return
+		return "", false
 	}
+	return "", false
 }
 
 func getTeam(player1 string, player2 string) (team, error) {
@@ -574,51 +581,56 @@ func newHub() *hub {
 				continue
 			}
 
+			var broadcast string
+			var reset bool
+
 			switch cm.Action {
 			case "register game":
 				h.sideMx.Lock()
-				registerGame(h, cm)
+				broadcast, reset = registerGame(h, cm)
 				h.sideMx.Unlock()
 			case "unregister":
 				h.sideMx.Lock()
-				unregisterGame(h, cm)
+				broadcast, reset = unregisterGame(h, cm)
 				h.sideMx.Unlock()
 			case "confirm":
 				h.sideMx.Lock()
-				confirmPlayer(h, cm)
+				broadcast, reset = confirmPlayer(h, cm)
 				h.sideMx.Unlock()
 			case "register team":
 				h.sideMx.Lock()
-				registerTeam(h, cm)
+				broadcast, reset = registerTeam(h, cm)
 				h.sideMx.Unlock()
 			case "goal":
 				h.scoreMx.Lock()
 				h.sideMx.Lock()
-				registerGoal(h, cm)
+				broadcast, reset = registerGoal(h, cm)
 				h.sideMx.Unlock()
 				h.scoreMx.Unlock()
 			case "undo goal":
 				h.scoreMx.Lock()
 				h.sideMx.Lock()
-				unregisterGoal(h, cm)
+				broadcast, reset = unregisterGoal(h, cm)
 				h.sideMx.Unlock()
 				h.scoreMx.Unlock()
 			}
 			h.confirmations <- "match state"
+			if reset {
+				h.confirmations <- broadcast
+			}
 		}
 	}()
 
 	go func() {
 		for {
 			var msg []byte
-			confirmation := <-h.confirmations
-			fmt.Println("Sending confirmations")
+			broadcast := <-h.confirmations
+			fmt.Println("Sending broadcast")
 
 			h.sideMx.RLock()
 			h.connectionsMx.Lock()
-			switch confirmation {
+			switch broadcast {
 			case "match state":
-				fmt.Println("Case 1")
 				state := matchState{
 					BlackPlayer1:  h.blackSide[0],
 					BlackPlayer2:  h.blackSide[1],
@@ -634,8 +646,10 @@ func newHub() *hub {
 				stateJSON, _ := json.Marshal(state)
 				msg = stateJSON
 			default:
-				fmt.Println("Case 2")
-				state := matchState{Error: confirmation}
+				type message struct {
+					Message string `json:"message"`
+				}
+				state := message{Message: broadcast}
 				stateJSON, _ := json.Marshal(state)
 				msg = stateJSON
 			}

@@ -163,12 +163,6 @@ func reset(h *hub, resetReason string) {
 func registerGame(h *hub, cm *dcflMsg) {
 	fmt.Println("Registering")
 	if cm.Side == "black" {
-		// Check if black side is full.
-		if h.blackSide[0] != (player{}) && h.blackSide[1] != (player{}) {
-			fmt.Println("Black side full")
-			return
-		}
-
 		// Check if already registered on black side.
 		found := false
 		confirmed := false
@@ -186,13 +180,13 @@ func registerGame(h *hub, cm *dcflMsg) {
 			fmt.Println("Already registered and confirmed to black side")
 			return
 		}
-	} else if cm.Side == "yellow" {
-		// Check if yellow side is full.
-		if h.yellowSide[0] != (player{}) && h.yellowSide[1] != (player{}) {
-			fmt.Println("Yellow side full")
+
+		// Check if black side is full.
+		if h.blackSide[0] != (player{}) && h.blackSide[1] != (player{}) {
+			fmt.Println("Black side full")
 			return
 		}
-
+	} else if cm.Side == "yellow" {
 		// Check if already registered on yellow side.
 		found := false
 		confirmed := false
@@ -208,6 +202,12 @@ func registerGame(h *hub, cm *dcflMsg) {
 				unregisterGame(h, cm)
 			}
 			fmt.Println("Already registered and confirmed to yellow side")
+			return
+		}
+
+		// Check if yellow side is full.
+		if h.yellowSide[0] != (player{}) && h.yellowSide[1] != (player{}) {
+			fmt.Println("Yellow side full")
 			return
 		}
 	} else {

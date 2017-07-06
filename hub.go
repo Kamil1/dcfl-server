@@ -145,6 +145,7 @@ func endGame(h *hub) {
 
 // This function assumes and requires the caller to have the sideMx and scoreMx locks acquired.
 func (h *hub) reset() {
+	fmt.Println("Reseting")
 	h.blackTeam = team{}
 	h.yellowTeam = team{}
 	h.blackSide[0] = player{}

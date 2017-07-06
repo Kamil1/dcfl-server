@@ -674,8 +674,8 @@ func newHub() *hub {
 
 func (h *hub) addConnection(conn *connection) {
 	h.connectionsMx.Lock()
-	defer h.connectionsMx.Unlock()
 	h.connections[conn] = struct{}{}
+	h.connectionsMx.Unlock()
 	h.confirmations <- "match state"
 }
 
